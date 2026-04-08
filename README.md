@@ -3,7 +3,7 @@
 Chatbot web bilingüe (español/inglés) de productividad personal impulsado por Gemini AI. Gratis, siempre disponible y sin límites de uso.
 
 ## 🚀 Demo en vivo
-> https://proassist-production.up.railway.app
+> [URL del deploy en Railway]
 
 ## 🛠 Stack
 Python · Flask · Gemini AI (Google) · Docker · Railway
