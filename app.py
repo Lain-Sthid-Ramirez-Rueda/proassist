@@ -39,9 +39,12 @@ def chat():
     )
 
     result = response.json()
+
+    if "choices" not in result:
+        return jsonify({"response": "Error: " + str(result)}), 200
+
     assistant_message = result["choices"][0]["message"]["content"]
     conversation_history.append({"role": "assistant", "content": assistant_message})
-
     return jsonify({"response": assistant_message})
 
 @app.route("/reset", methods=["POST"])
