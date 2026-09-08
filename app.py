@@ -43,7 +43,7 @@ def chat():
 
         headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
 
-        json={"model": "llama-3.3-70b-versatile", "messages": conversation_history, "max_tokens": 1024}
+        json={"model": "groq/compound", "messages": conversation_history, "max_tokens": 1024}
 
     )
 
