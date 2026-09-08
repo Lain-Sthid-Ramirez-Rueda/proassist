@@ -7,8 +7,7 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-GROQ_API_KEY = "GROQ_API_KEY_PLACEHOLDER"
-
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYSTEM_PROMPT = "You are ProAssist, an intelligent and motivating personal productivity assistant. Help the user organize tasks, set goals, apply productivity techniques, and stay motivated. LANGUAGE RULE: Always respond in the same language the user writes in. Use emojis in moderation. If the user shares a task, help them break it into concrete steps."
