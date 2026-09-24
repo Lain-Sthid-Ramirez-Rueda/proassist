@@ -7,7 +7,6 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 SYSTEM_PROMPT = "You are ProAssist, an intelligent and motivating personal productivity assistant. Help the user organize tasks, set goals, apply productivity techniques, and stay motivated. LANGUAGE RULE: Always respond in the same language the user writes in. Use emojis in moderation. If the user shares a task, help them break it into concrete steps."
@@ -34,23 +33,39 @@ def chat():
 
         return jsonify({"error": "empty"}), 400
 
+    api_key = os.environ.get("GROQ_API_KEY")
+
+    if not api_key:
+
+        return jsonify({"response": "⚠️ Error: La variable de entorno GROQ_API_KEY no está configurada en Render."}), 200
+
     conversation_history.append({"role": "user", "content": user_message})
 
-    response = requests.post(
+    try:
 
-        GROQ_URL,
+        response = requests.post(
 
-        headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            GROQ_URL,
 
-        json={"model": "groq/compound", "messages": conversation_history, "max_tokens": 1024}
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
 
-    )
+            json={"model": "llama-3.3-70b-versatile", "messages": conversation_history, "max_tokens": 1024},
 
-    result = response.json()
+            timeout=30
+
+        )
+
+        result = response.json()
+
+    except Exception as e:
+
+        return jsonify({"response": f"⚠️ Error de conexión al servicio de IA: {str(e)}"}), 200
 
     if "choices" not in result:
 
-        return jsonify({"response": "Error: " + str(result)}), 200
+        err_msg = result.get("error", {}).get("message", str(result))
+
+        return jsonify({"response": f"⚠️ Error de Groq: {err_msg}"}), 200
 
     assistant_message = result["choices"][0]["message"]["content"]
 
