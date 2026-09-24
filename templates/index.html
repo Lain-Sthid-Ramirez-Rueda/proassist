@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ProAssist</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -29,9 +30,25 @@
     .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
     .message.user .avatar { background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3); }
     .message.bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
-    .bubble { padding: 0.75rem 1rem; border-radius: 14px; font-size: 14px; line-height: 1.65; white-space: pre-wrap; }
-    .message.user .bubble { background: #1f1d35; border: 1px solid rgba(124,106,247,0.2); border-bottom-right-radius: 4px; }
+    .bubble { padding: 0.75rem 1rem; border-radius: 14px; font-size: 14px; line-height: 1.65; word-break: break-word; }
+    .message.user .bubble { background: #1f1d35; border: 1px solid rgba(124,106,247,0.2); border-bottom-right-radius: 4px; white-space: pre-wrap; }
     .message.bot .bubble { background: #141420; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .message.bot .bubble h1, .message.bot .bubble h2, .message.bot .bubble h3, .message.bot .bubble h4 { font-family: 'Syne', sans-serif; color: var(--text); margin: 0.8rem 0 0.35rem; font-weight: 700; line-height: 1.3; }
+    .message.bot .bubble h1:first-child, .message.bot .bubble h2:first-child, .message.bot .bubble h3:first-child, .message.bot .bubble h4:first-child { margin-top: 0; }
+    .message.bot .bubble h1 { font-size: 17px; color: var(--accent); }
+    .message.bot .bubble h2 { font-size: 16px; color: var(--accent); }
+    .message.bot .bubble h3 { font-size: 15px; color: #a496f8; }
+    .message.bot .bubble h4 { font-size: 14px; font-weight: 600; }
+    .message.bot .bubble p { margin-bottom: 0.55rem; }
+    .message.bot .bubble p:last-child { margin-bottom: 0; }
+    .message.bot .bubble strong { font-weight: 700; color: #ffffff; }
+    .message.bot .bubble em { font-style: italic; opacity: 0.9; }
+    .message.bot .bubble ul, .message.bot .bubble ol { margin: 0.4rem 0 0.6rem 1.25rem; padding: 0; }
+    .message.bot .bubble li { margin-bottom: 0.25rem; }
+    .message.bot .bubble hr { border: none; border-top: 1px solid var(--border); margin: 0.8rem 0; }
+    .message.bot .bubble code { background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.25); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12.5px; color: #c9c3fa; }
+    .message.bot .bubble pre { background: #0b0b10; border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px; overflow-x: auto; margin: 0.6rem 0; }
+    .message.bot .bubble pre code { background: transparent; border: none; padding: 0; color: var(--text); }
     .typing .bubble { display: flex; align-items: center; gap: 4px; padding: 0.75rem 1rem; }
     .dot { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -94,12 +111,33 @@
   const sendBtn = document.getElementById('send-btn');
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; });
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function formatContent(text) {
+    if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+      return marked.parse(text);
+    }
+    let html = escapeHtml(text);
+    return html
+      .replace(/^#### (.*$)/gim, '<h4 style="margin:0.5rem 0;color:var(--text);">$1</h4>')
+      .replace(/^### (.*$)/gim, '<h3 style="margin:0.5rem 0;color:#a496f8;">$1</h3>')
+      .replace(/^## (.*$)/gim, '<h2 style="margin:0.5rem 0;color:#7c6af7;">$1</h2>')
+      .replace(/^# (.*$)/gim, '<h1 style="margin:0.5rem 0;color:#7c6af7;">$1</h1>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^\s*[\*\-]\s+(.*$)/gim, '• $1')
+      .replace(/\n/g, '<br/>');
+  }
+
   function appendMessage(role, text) {
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.remove();
     const msg = document.createElement('div');
     msg.className = `message ${role}`;
-    msg.innerHTML = `<div class="avatar">${role === 'user' ? '👤' : '⚡'}</div><div class="bubble">${text}</div>`;
+    const formatted = role === 'bot' ? formatContent(text) : escapeHtml(text);
+    msg.innerHTML = `<div class="avatar">${role === 'user' ? '👤' : '⚡'}</div><div class="bubble">${formatted}</div>`;
     chatWindow.appendChild(msg);
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
