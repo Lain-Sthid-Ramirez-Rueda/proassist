@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 from collections import OrderedDict
 import requests
 from flask import Flask, render_template, request, jsonify
@@ -20,14 +21,15 @@ SYSTEM_PROMPT = (
     "Maintain a respectful, safe, and professional persona at all times."
 )
 
-# --- Gestor de Sesiones Aisladas en Memoria con TTL ---
+# --- Gestor de Sesiones Aisladas en Memoria con Concurrencia Thread-Safe ---
 class SessionManager:
-    def __init__(self, max_sessions=200, ttl_seconds=3600):
+    def __init__(self, max_sessions=250, ttl_seconds=3600):
         self.sessions = OrderedDict()
         self.max_sessions = max_sessions
         self.ttl = ttl_seconds
+        self._lock = threading.Lock()
 
-    def _cleanup(self):
+    def _cleanup_unlocked(self):
         now = time.time()
         expired = [sid for sid, data in self.sessions.items() if now - data["last_active"] > self.ttl]
         for sid in expired:
@@ -36,41 +38,48 @@ class SessionManager:
             self.sessions.popitem(last=False)
 
     def get_history(self, session_id):
-        self._cleanup()
-        if session_id in self.sessions:
-            self.sessions[session_id]["last_active"] = time.time()
-            return self.sessions[session_id]["history"]
-        history = [{"role": "system", "content": SYSTEM_PROMPT}]
-        self.sessions[session_id] = {
-            "history": history,
-            "last_active": time.time()
-        }
-        return history
+        with self._lock:
+            self._cleanup_unlocked()
+            if session_id in self.sessions:
+                self.sessions[session_id]["last_active"] = time.time()
+                return self.sessions[session_id]["history"]
+            history = [{"role": "system", "content": SYSTEM_PROMPT}]
+            self.sessions[session_id] = {
+                "history": history,
+                "last_active": time.time()
+            }
+            return history
 
     def reset(self, session_id):
-        self.sessions[session_id] = {
-            "history": [{"role": "system", "content": SYSTEM_PROMPT}],
-            "last_active": time.time()
-        }
+        with self._lock:
+            self.sessions[session_id] = {
+                "history": [{"role": "system", "content": SYSTEM_PROMPT}],
+                "last_active": time.time()
+            }
 
 session_manager = SessionManager()
 
-# --- Limitador de Tasa por IP (Anti-Spam / Anti-Abuso) ---
+# --- Limitador de Tasa Thread-Safe por IP (Anti-Spam / Anti-Abuso) ---
 class RateLimiter:
-    def __init__(self, max_requests=20, window_seconds=60):
+    def __init__(self, max_requests=25, window_seconds=60):
         self.max_requests = max_requests
         self.window = window_seconds
         self.requests = {}
+        self._lock = threading.Lock()
 
     def is_allowed(self, ip):
-        now = time.time()
-        timestamps = self.requests.get(ip, [])
-        valid_timestamps = [t for t in timestamps if now - t < self.window]
-        if len(valid_timestamps) >= self.max_requests:
-            return False
-        valid_timestamps.append(now)
-        self.requests[ip] = valid_timestamps
-        return True
+        with self._lock:
+            now = time.time()
+            timestamps = self.requests.get(ip, [])
+            valid_timestamps = [t for t in timestamps if now - t < self.window]
+            if len(valid_timestamps) >= self.max_requests:
+                return False
+            valid_timestamps.append(now)
+            self.requests[ip] = valid_timestamps
+            # Limpieza periódica de IPs inactivas
+            if len(self.requests) > 1000:
+                self.requests = {k: v for k, v in self.requests.items() if v and now - v[-1] < self.window}
+            return True
 
 rate_limiter = RateLimiter()
 
@@ -98,9 +107,35 @@ def add_security_headers(response):
     )
     return response
 
+# --- Manejadores de Errores Globales ---
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({"response": "⚠️ La solicitud supera el tamaño máximo permitido (32 KB)."}), 413
+
+@app.errorhandler(404)
+def not_found(error):
+    if request.path.startswith(("/chat", "/reset", "/health")):
+        return jsonify({"error": "not_found"}), 404
+    return render_template("index.html")
+
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({"response": "⚠️ Error interno temporal del servidor. Inténtalo de nuevo."}), 500
+
+# --- Rutas de la Aplicación ---
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Endpoint de monitoreo y keep-alive para servicios de uptime."""
+    return jsonify({
+        "status": "healthy",
+        "service": "ProAssist",
+        "timestamp": int(time.time()),
+        "uptime": "online"
+    }), 200
 
 @app.route("/chat", methods=["POST"])
 def chat():
