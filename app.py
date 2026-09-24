@@ -41,7 +41,11 @@ def chat():
 
     conversation_history.append({"role": "user", "content": user_message})
 
+    # Mantener el prompt del sistema y los últimos 8 mensajes para no saturar los límites de tokens
+    messages_payload = [conversation_history[0]] + (conversation_history[1:][-8:])
+
     model = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
+    max_tokens = int(os.environ.get("MAX_TOKENS", 700))
 
     try:
 
@@ -51,7 +55,7 @@ def chat():
 
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
 
-            json={"model": model, "messages": conversation_history, "max_tokens": 1024},
+            json={"model": model, "messages": messages_payload, "max_tokens": max_tokens},
 
             timeout=30
 
