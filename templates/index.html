@@ -5,146 +5,705 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>ProAssist — Asistente de Productividad</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>"/>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0c0c0f; --surface: #15151a; --surface2: #1e1e26;
-      --border: rgba(255,255,255,0.07); --accent: #7c6af7; --accent2: #4fc4a0;
-      --text: #f0eff8; --muted: #7a798a;
+      --bg: #090a0f;
+      --surface: #12131a;
+      --surface2: #1a1b24;
+      --surface3: #222430;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(124, 106, 247, 0.5);
+      --accent: #7c6af7;
+      --accent-hover: #9282ff;
+      --accent2: #4fc4a0;
+      --text: #f1f0f8;
+      --text-bright: #ffffff;
+      --muted: #828194;
     }
-    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
-    .logo { display: flex; align-items: center; gap: 10px; }
-    .logo-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .logo-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; }
-    .logo-text span { color: var(--accent); }
-    .badge { font-size: 11px; color: var(--accent2); background: rgba(79,196,160,0.1); border: 1px solid rgba(79,196,160,0.2); padding: 3px 10px; border-radius: 20px; }
-    #chat-window { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem; scroll-behavior: smooth; }
-    #chat-window::-webkit-scrollbar { width: 4px; }
-    #chat-window::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-    .message { display: flex; gap: 10px; animation: fadeUp 0.25s ease forwards; max-width: 85%; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Fondo ambiental suave */
+    body::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: 20%;
+      width: 60%;
+      height: 40%;
+      background: radial-gradient(circle, rgba(124, 106, 247, 0.07) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* --- Encabezado --- */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(18, 19, 26, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+    .logo-icon {
+      width: 35px;
+      height: 35px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      box-shadow: 0 4px 12px rgba(124, 106, 247, 0.25);
+    }
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.2px;
+    }
+    .logo-text span {
+      background: linear-gradient(135deg, var(--accent), #a496f8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--accent2);
+      background: rgba(79, 196, 160, 0.08);
+      border: 1px solid rgba(79, 196, 160, 0.22);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      user-select: none;
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 8px var(--accent2);
+      animation: pulseDot 2.2s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.75); }
+    }
+    .hdr-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .hdr-btn:hover {
+      background: var(--surface2);
+      color: var(--text);
+      border-color: rgba(124, 106, 247, 0.35);
+      transform: translateY(-1px);
+    }
+
+    /* --- Ventana de Chat --- */
+    #chat-window {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      scroll-behavior: smooth;
+      position: relative;
+      z-index: 1;
+    }
+    #chat-window::-webkit-scrollbar { width: 5px; }
+    #chat-window::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 4px; }
+    #chat-window::-webkit-scrollbar-thumb:hover { background: rgba(124, 106, 247, 0.4); }
+
+    /* Mensajes */
+    .message {
+      display: flex;
+      gap: 11px;
+      animation: fadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      max-width: 86%;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .message.user { align-self: flex-end; flex-direction: row-reverse; }
     .message.bot { align-self: flex-start; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
-    .message.user .avatar { background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3); }
-    .message.bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
-    
-    .msg-content { display: flex; flex-direction: column; max-width: 100%; }
-    .bubble { padding: 0.75rem 1rem; border-radius: 14px; font-size: 14px; line-height: 1.65; word-break: break-word; }
-    .message.user .bubble { background: #1f1d35; border: 1px solid rgba(124,106,247,0.2); border-bottom-right-radius: 4px; white-space: pre-wrap; }
-    .message.bot .bubble { background: #141420; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
-    .message.bot .bubble h1, .message.bot .bubble h2, .message.bot .bubble h3, .message.bot .bubble h4 { font-family: 'Syne', sans-serif; color: var(--text); margin: 0.8rem 0 0.35rem; font-weight: 700; line-height: 1.3; }
-    .message.bot .bubble h1:first-child, .message.bot .bubble h2:first-child, .message.bot .bubble h3:first-child, .message.bot .bubble h4:first-child { margin-top: 0; }
-    .message.bot .bubble h1 { font-size: 17px; color: var(--accent); }
-    .message.bot .bubble h2 { font-size: 16px; color: var(--accent); }
-    .message.bot .bubble h3 { font-size: 15px; color: #a496f8; }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      user-select: none;
+    }
+    .message.user .avatar {
+      background: rgba(124, 106, 247, 0.15);
+      border: 1px solid rgba(124, 106, 247, 0.35);
+      box-shadow: 0 2px 8px rgba(124, 106, 247, 0.15);
+    }
+    .message.bot .avatar {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 2px 8px rgba(79, 196, 160, 0.25);
+    }
+
+    .msg-content {
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+    }
+    .bubble {
+      padding: 0.85rem 1.15rem;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+    .message.user .bubble {
+      background: linear-gradient(135deg, #1d1b32, #24223e);
+      border: 1px solid rgba(124, 106, 247, 0.3);
+      border-bottom-right-radius: 4px;
+      white-space: pre-wrap;
+      color: #f6f5ff;
+    }
+    .message.bot .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Tipografía Markdown */
+    .message.bot .bubble h1,
+    .message.bot .bubble h2,
+    .message.bot .bubble h3,
+    .message.bot .bubble h4 {
+      font-family: 'Syne', sans-serif;
+      color: var(--text-bright);
+      margin: 0.9rem 0 0.4rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .message.bot .bubble h1:first-child,
+    .message.bot .bubble h2:first-child,
+    .message.bot .bubble h3:first-child,
+    .message.bot .bubble h4:first-child { margin-top: 0; }
+    .message.bot .bubble h1 { font-size: 18px; color: var(--accent); }
+    .message.bot .bubble h2 { font-size: 16px; color: #a496f8; }
+    .message.bot .bubble h3 { font-size: 15px; color: #b6abfc; }
     .message.bot .bubble h4 { font-size: 14px; font-weight: 600; }
-    .message.bot .bubble p { margin-bottom: 0.55rem; }
+    
+    .message.bot .bubble p { margin-bottom: 0.6rem; }
     .message.bot .bubble p:last-child { margin-bottom: 0; }
     .message.bot .bubble strong { font-weight: 700; color: #ffffff; }
     .message.bot .bubble em { font-style: italic; opacity: 0.9; }
-    .message.bot .bubble ul, .message.bot .bubble ol { margin: 0.4rem 0 0.6rem 1.25rem; padding: 0; }
-    .message.bot .bubble li { margin-bottom: 0.25rem; }
-    .message.bot .bubble hr { border: none; border-top: 1px solid var(--border); margin: 0.8rem 0; }
-    .message.bot .bubble code { background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.25); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12.5px; color: #c9c3fa; }
-    
-    .pre-container { position: relative; margin: 0.7rem 0; }
-    .pre-copy-btn { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: var(--muted); padding: 3px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
-    .pre-copy-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .message.bot .bubble ul,
+    .message.bot .bubble ol { margin: 0.5rem 0 0.7rem 1.3rem; padding: 0; }
+    .message.bot .bubble li { margin-bottom: 0.3rem; }
+    .message.bot .bubble hr { border: none; border-top: 1px solid var(--border); margin: 0.9rem 0; }
+
+    /* Checkboxes de productividad interactivos (- [ ] y - [x]) */
+    .message.bot .bubble input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      margin-right: 7px;
+      cursor: pointer;
+      vertical-align: -2px;
+    }
+    .message.bot .bubble li:has(input:checked) {
+      text-decoration: line-through;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    /* Tablas Markdown */
+    .message.bot .bubble table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8rem 0;
+      font-size: 13px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .message.bot .bubble th,
+    .message.bot .bubble td {
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .message.bot .bubble th {
+      background: rgba(124, 106, 247, 0.12);
+      font-weight: 600;
+      color: #ffffff;
+    }
+    .message.bot .bubble tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Bloques de código */
+    .message.bot .bubble code {
+      background: rgba(124, 106, 247, 0.14);
+      border: 1px solid rgba(124, 106, 247, 0.25);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12.5px;
+      color: #cfc8ff;
+    }
+    .pre-container {
+      position: relative;
+      margin: 0.75rem 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #0b0c11;
+    }
+    .pre-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      user-select: none;
+    }
+    .pre-copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .pre-copy-btn:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
     .pre-copy-btn.copied { color: var(--accent2); border-color: var(--accent2); }
 
-    .message.bot .bubble pre { background: #0b0b10; border: 1px solid var(--border); padding: 1rem 0.85rem 0.85rem; border-radius: 8px; overflow-x: auto; margin: 0; }
-    .message.bot .bubble pre code { background: transparent; border: none; padding: 0; color: var(--text); }
-    
-    .msg-toolbar { display: flex; gap: 6px; margin-top: 4px; padding: 0 4px; opacity: 0; transition: opacity 0.2s; }
-    .message:hover .msg-toolbar, .message:focus-within .msg-toolbar { opacity: 1; }
-    .copy-msg-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 3px 8px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-    .copy-msg-btn:hover { background: var(--surface2); color: var(--text); border-color: rgba(124,106,247,0.4); }
-    .copy-msg-btn.copied { color: var(--accent2); border-color: var(--accent2); }
+    .message.bot .bubble pre {
+      background: transparent;
+      border: none;
+      padding: 0.85rem;
+      overflow-x: auto;
+      margin: 0;
+    }
+    .message.bot .bubble pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: var(--text);
+    }
 
-    .typing .bubble { display: flex; align-items: center; gap: 4px; padding: 0.75rem 1rem; }
+    /* Barra de herramientas del mensaje */
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      padding: 0 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .message.user .msg-meta { justify-content: flex-end; }
+    .copy-msg-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      opacity: 0;
+      transition: opacity 0.2s, color 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .message:hover .copy-msg-btn,
+    .message:focus-within .copy-msg-btn { opacity: 1; }
+    .copy-msg-btn:hover { color: var(--text); }
+    .copy-msg-btn.copied { color: var(--accent2) !important; opacity: 1; }
+
+    /* Indicador de escritura */
+    .typing .bubble { display: flex; align-items: center; gap: 5px; padding: 0.85rem 1.15rem; }
     .dot { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce { 0%,80%,100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
-    
-    .welcome { text-align: center; padding: 2rem 1rem; animation: fadeUp 0.4s ease forwards; }
-    .welcome h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 0.5rem; }
-    .welcome p { color: var(--muted); font-size: 14px; margin-bottom: 1.5rem; }
-    .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .suggestion-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s; }
-    .suggestion-btn:hover { border-color: var(--accent); color: var(--accent); }
-    
-    .input-area { padding: 1rem 1.5rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
-    .input-row { display: flex; gap: 10px; align-items: flex-end; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 8px 8px 8px 14px; transition: border-color 0.2s; }
-    .input-row:focus-within { border-color: rgba(124,106,247,0.4); }
-    #user-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; resize: none; max-height: 120px; line-height: 1.5; padding: 4px 0; }
+    @keyframes bounce { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+    /* --- Pantalla de Bienvenida con Tarjetas --- */
+    .welcome {
+      text-align: center;
+      padding: 2rem 1rem 1rem;
+      animation: fadeUp 0.4s ease forwards;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .welcome h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.3px;
+    }
+    .welcome p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 1.5rem;
+    }
+    .suggestions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+      text-align: left;
+    }
+    .suggestion-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .suggestion-card:hover {
+      background: var(--surface2);
+      border-color: rgba(124, 106, 247, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    }
+    .sugg-title {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sugg-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* Botón flotante para volver abajo */
+    #scroll-bottom-btn {
+      position: absolute;
+      bottom: 110px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10;
+    }
+    #scroll-bottom-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    #scroll-bottom-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    /* --- Chips de Acciones Rápidas --- */
+    .quick-chips-wrap {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding: 0 1.4rem 6px;
+      scrollbar-width: none;
+      flex-shrink: 0;
+      z-index: 5;
+    }
+    .quick-chips-wrap::-webkit-scrollbar { display: none; }
+    .chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .chip:hover {
+      background: var(--surface2);
+      border-color: rgba(124, 106, 247, 0.35);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    /* --- Área de Entrada --- */
+    .input-area {
+      padding: 0.6rem 1.4rem 1rem;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      border-top: 1px solid var(--border);
+      background: rgba(18, 19, 26, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 8px 10px 8px 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-row:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(124, 106, 247, 0.12);
+    }
+    #user-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-bright);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      resize: none;
+      max-height: 120px;
+      line-height: 1.5;
+      padding: 4px 0;
+    }
     #user-input::placeholder { color: var(--muted); }
     
     .controls { display: flex; gap: 6px; align-items: center; }
-    .char-badge { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; display: none; padding: 0 4px; user-select: none; }
+    .char-badge {
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      display: none;
+      padding: 0 4px;
+      user-select: none;
+    }
     .char-badge.visible { display: inline-block; }
     .char-badge.warn { color: #f59e0b; }
     .char-badge.limit { color: #ef4444; }
 
-    #reset-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-    #reset-btn:hover { border-color: #e05f5f; color: #e05f5f; }
-    #send-btn { background: linear-gradient(135deg, var(--accent), #5a4fd4); border: none; color: white; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s, transform 0.1s; }
-    #send-btn:hover { opacity: 0.88; }
+    #send-btn {
+      background: linear-gradient(135deg, var(--accent), #5a4fd4);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 2px 10px rgba(124, 106, 247, 0.3);
+    }
+    #send-btn:hover { opacity: 0.92; transform: translateY(-1px); }
     #send-btn:active { transform: scale(0.95); }
-    #send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    footer { text-align: center; font-size: 11px; color: var(--muted); padding: 8px 0 4px; }
+    #send-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; transform: none; }
+    
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 8px 0 2px;
+      user-select: none;
+    }
+
+    /* Notificación Toast Flotante */
+    #toast {
+      position: fixed;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(26, 27, 36, 0.95);
+      border: 1px solid rgba(124, 106, 247, 0.35);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      backdrop-filter: blur(8px);
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
+
 <header>
   <div class="logo">
     <div class="logo-icon" aria-hidden="true">⚡</div>
     <div class="logo-text">Pro<span>Assist</span></div>
   </div>
-  <span class="badge" aria-label="Estado del sistema: IA activa">IA activa</span>
+  <div class="header-actions">
+    <div class="status-pill" aria-label="Estado del sistema: IA activa">
+      <span class="pulse-dot" aria-hidden="true"></span>
+      <span>IA activa</span>
+    </div>
+    <button class="hdr-btn" id="export-btn" title="Exportar plan como Markdown (.md)" aria-label="Exportar conversación a Markdown" onclick="exportChat()">
+      📥
+    </button>
+    <button class="hdr-btn" id="hdr-reset-btn" title="Nueva conversación" aria-label="Reiniciar conversación" onclick="resetChat()">
+      ↺
+    </button>
+  </div>
 </header>
 
-<div id="chat-window" role="log" aria-live="polite" aria-label="Historial de mensajes de chat">
+<div id="chat-window" role="log" aria-live="polite" aria-label="Historial de mensajes">
   <div class="welcome" id="welcome">
     <h2>Hola, soy ProAssist 👋</h2>
-    <p>Tu asistente de productividad personal. ¿En qué te ayudo hoy?</p>
-    <div class="suggestions">
-      <button class="suggestion-btn" onclick="sendSuggestion(this)">📋 Organizar mi día</button>
-      <button class="suggestion-btn" onclick="sendSuggestion(this)">🎯 Definir mis metas</button>
-      <button class="suggestion-btn" onclick="sendSuggestion(this)">⏱ Técnica Pomodoro</button>
-      <button class="suggestion-btn" onclick="sendSuggestion(this)">💡 Dame motivación</button>
+    <p>Tu copiloto inteligente para estructurar metas, organizar tareas y mantener el foco.</p>
+    <div class="suggestions-grid">
+      <div class="suggestion-card" onclick="sendSuggestionText('📋 Ayúdame a organizar mi día de forma realista con prioridades.')">
+        <div class="sugg-title">📋 Organizar mi día</div>
+        <div class="sugg-desc">Divide tus tareas en bloques de tiempo y prioridades.</div>
+      </div>
+      <div class="suggestion-card" onclick="sendSuggestionText('🎯 Guíame paso a paso para definir 3 metas SMART para este mes.')">
+        <div class="sugg-title">🎯 Definir metas SMART</div>
+        <div class="sugg-desc">Establece objetivos medibles, realistas y claros.</div>
+      </div>
+      <div class="suggestion-card" onclick="sendSuggestionText('⏱ ¿Cómo aplico la técnica Pomodoro para una sesión de estudio profundo?')">
+        <div class="sugg-title">⏱ Técnica Pomodoro</div>
+        <div class="sugg-desc">Optimiza tu energía mental en intervalos enfocados.</div>
+      </div>
+      <div class="suggestion-card" onclick="sendSuggestionText('💡 Estoy procrastinando una tarea importante. Dame un plan de 5 minutos para arrancar.')">
+        <div class="sugg-title">💡 Vencer la procrastinación</div>
+        <div class="sugg-desc">Supera el bloqueo inicial con pasos diminutos.</div>
+      </div>
     </div>
   </div>
 </div>
 
+<button id="scroll-bottom-btn" aria-label="Bajar al final del chat" onclick="scrollToBottom()">↓</button>
+
+<div class="quick-chips-wrap" id="quick-chips" aria-label="Acciones rápidas">
+  <button class="chip" onclick="insertPrompt('📌 Desglosa esto en pasos concretos:')">📌 En pasos</button>
+  <button class="chip" onclick="insertPrompt('📅 Diseña un horario por bloques para esto:')">📅 Crear horario</button>
+  <button class="chip" onclick="insertPrompt('🎯 Aplica la Matriz de Eisenhower (urgente vs importante):')">🎯 Matriz Eisenhower</button>
+  <button class="chip" onclick="insertPrompt('⏱ ¿Cómo divido esto con la técnica Pomodoro?:')">⏱ En Pomodoros</button>
+  <button class="chip" onclick="insertPrompt('💡 Dame 3 consejos prácticos para mantener el foco en esto:')">💡 Tips de foco</button>
+</div>
+
 <div class="input-area">
   <div class="input-row">
-    <textarea id="user-input" rows="1" maxlength="1000" placeholder="Escribe algo... / Type something..." aria-label="Escribe tu mensaje para ProAssist"></textarea>
+    <textarea id="user-input" rows="1" maxlength="1000" placeholder="Escribe tus tareas, metas o dudas... / Type here..." aria-label="Mensaje para ProAssist"></textarea>
     <div class="controls">
       <span id="char-count" class="char-badge" aria-live="polite"></span>
-      <button id="reset-btn" title="Nueva conversación" aria-label="Reiniciar conversación" onclick="resetChat()">↺</button>
       <button id="send-btn" title="Enviar mensaje" aria-label="Enviar mensaje" onclick="sendMessage()">➤</button>
     </div>
   </div>
   <footer>Desarrollado por Lain Sthid Ramírez Rueda · Analista y Desarrollador de Software</footer>
 </div>
 
+<div id="toast" role="status" aria-live="polite"></div>
+
 <script>
   const chatWindow = document.getElementById('chat-window');
   const input = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
   const charBadge = document.getElementById('char-count');
+  const scrollBtn = document.getElementById('scroll-bottom-btn');
 
   // Identificador de sesión único por pestaña/navegador (aislamiento total de chats)
   let sessionId = sessionStorage.getItem('proassist_sid');
   if (!sessionId) {
     sessionId = 'pa_' + Math.random().toString(36).substring(2, 12) + '_' + Date.now().toString(36);
     sessionStorage.setItem('proassist_sid', sessionId);
+  }
+
+  // Notificación flotante Toast
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => {
+      toast.classList.remove('show');
+    }, 2400);
   }
 
   // Atajos de teclado: Enter para enviar, Shift+Enter para salto de línea
@@ -169,6 +728,16 @@
     }
   });
 
+  // Control del botón flotante para volver abajo
+  chatWindow.addEventListener('scroll', () => {
+    const isNearBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight < 120;
+    scrollBtn.classList.toggle('visible', !isNearBottom);
+  });
+
+  function scrollToBottom() {
+    chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+  }
+
   function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -190,12 +759,20 @@
         .replace(/\n/g, '<br/>');
     }
 
-    // Envolver bloques <pre><code> con botón de copiar código
+    // Envolver bloques <pre><code> con barra superior y botón de copiado
     rawHtml = rawHtml.replace(/<pre><code(?:\s+class="([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi, (match, lang, code) => {
-      return `<div class="pre-container"><button class="pre-copy-btn" onclick="copySnippet(this)" aria-label="Copiar código">Copiar código</button><pre><code class="${lang || ''}">${code}</code></pre></div>`;
+      const cleanLang = (lang || '').replace('language-', '') || 'código';
+      return `
+        <div class="pre-container">
+          <div class="pre-header">
+            <span>${cleanLang}</span>
+            <button class="pre-copy-btn" onclick="copySnippet(this)" aria-label="Copiar fragmento">Copiar</button>
+          </div>
+          <pre><code class="${lang || ''}">${code}</code></pre>
+        </div>`;
     });
 
-    // Sanitización anti-XSS con DOMPurify
+    // Sanitización estricta anti-XSS con DOMPurify
     if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
       return DOMPurify.sanitize(rawHtml);
     }
@@ -207,25 +784,25 @@
     if (!bubble) return;
     const textToCopy = bubble.innerText || bubble.textContent;
     navigator.clipboard.writeText(textToCopy).then(() => {
-      const orig = btn.innerHTML;
       btn.innerHTML = '✓ Copiado';
       btn.classList.add('copied');
+      showToast('📋 Copiado al portapapeles');
       setTimeout(() => {
-        btn.innerHTML = orig;
+        btn.innerHTML = '📋 Copiar';
         btn.classList.remove('copied');
       }, 2000);
     });
   }
 
   function copySnippet(btn) {
-    const codeEl = btn.parentElement.querySelector('code');
+    const codeEl = btn.closest('.pre-container').querySelector('code');
     if (!codeEl) return;
     navigator.clipboard.writeText(codeEl.innerText).then(() => {
-      const orig = btn.innerText;
       btn.innerText = '✓ Copiado';
       btn.classList.add('copied');
+      showToast('✓ Código copiado');
       setTimeout(() => {
-        btn.innerText = orig;
+        btn.innerText = 'Copiar';
         btn.classList.remove('copied');
       }, 2000);
     });
@@ -239,20 +816,25 @@
     msg.className = `message ${role}`;
 
     const formatted = role === 'bot' ? formatContent(text) : escapeHtml(text);
+    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const toolbar = role === 'bot' 
-      ? `<div class="msg-toolbar"><button class="copy-msg-btn" onclick="copyMessage(this)" aria-label="Copiar respuesta"><span aria-hidden="true">📋</span> Copiar</button></div>`
+      ? `<button class="copy-msg-btn" onclick="copyMessage(this)" aria-label="Copiar respuesta">📋 Copiar</button>`
       : '';
 
     msg.innerHTML = `
       <div class="avatar" aria-hidden="true">${role === 'user' ? '👤' : '⚡'}</div>
       <div class="msg-content">
         <div class="bubble">${formatted}</div>
-        ${toolbar}
+        <div class="msg-meta">
+          <span>${timeString}</span>
+          ${toolbar}
+        </div>
       </div>
     `;
 
     chatWindow.appendChild(msg);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
+    scrollToBottom();
   }
 
   function showTyping() {
@@ -268,7 +850,7 @@
       </div>
     `;
     chatWindow.appendChild(msg);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
+    scrollToBottom();
   }
 
   function removeTyping() {
@@ -306,9 +888,17 @@
     input.focus();
   }
 
-  function sendSuggestion(btn) {
-    input.value = btn.textContent.replace(/^[^\w]+/, '').trim();
+  function sendSuggestionText(text) {
+    input.value = text;
     sendMessage();
+  }
+
+  function insertPrompt(prefix) {
+    input.value = prefix + ' ';
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   }
 
   async function resetChat() {
@@ -323,16 +913,59 @@
     welcome.id = 'welcome';
     welcome.innerHTML = `
       <h2>Hola, soy ProAssist 👋</h2>
-      <p>Tu asistente de productividad personal. ¿En qué te ayudo hoy?</p>
-      <div class="suggestions">
-        <button class="suggestion-btn" onclick="sendSuggestion(this)">📋 Organizar mi día</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this)">🎯 Definir mis metas</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this)">⏱ Técnica Pomodoro</button>
-        <button class="suggestion-btn" onclick="sendSuggestion(this)">💡 Dame motivación</button>
+      <p>Tu copiloto inteligente para estructurar metas, organizar tareas y mantener el foco.</p>
+      <div class="suggestions-grid">
+        <div class="suggestion-card" onclick="sendSuggestionText('📋 Ayúdame a organizar mi día de forma realista con prioridades.')">
+          <div class="sugg-title">📋 Organizar mi día</div>
+          <div class="sugg-desc">Divide tus tareas en bloques de tiempo y prioridades.</div>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestionText('🎯 Guíame paso a paso para definir 3 metas SMART para este mes.')">
+          <div class="sugg-title">🎯 Definir metas SMART</div>
+          <div class="sugg-desc">Establece objetivos medibles, realistas y claros.</div>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestionText('⏱ ¿Cómo aplico la técnica Pomodoro para una sesión de estudio profundo?')">
+          <div class="sugg-title">⏱ Técnica Pomodoro</div>
+          <div class="sugg-desc">Optimiza tu energía mental en intervalos enfocados.</div>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestionText('💡 Estoy procrastinando una tarea importante. Dame un plan de 5 minutos para arrancar.')">
+          <div class="sugg-title">💡 Vencer la procrastinación</div>
+          <div class="sugg-desc">Supera el bloqueo inicial con pasos diminutos.</div>
+        </div>
       </div>
     `;
     chatWindow.appendChild(welcome);
     input.focus();
+    showToast('↺ Nueva conversación iniciada');
+  }
+
+  function exportChat() {
+    const messages = chatWindow.querySelectorAll('.message');
+    if (messages.length === 0) {
+      showToast('⚠️ No hay mensajes para exportar');
+      return;
+    }
+    let markdown = '# ⚡ ProAssist — Sesión de Productividad\n\n';
+    markdown += `*Fecha: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}*\n\n---\n\n`;
+    
+    messages.forEach(msg => {
+      const isUser = msg.classList.contains('user');
+      const author = isUser ? '👤 **Tú**' : '⚡ **ProAssist**';
+      const bubble = msg.querySelector('.bubble');
+      if (bubble) {
+        markdown += `### ${author}\n\n${bubble.innerText.trim()}\n\n---\n\n`;
+      }
+    });
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ProAssist_Plan_${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📥 Plan descargado como .md');
   }
 </script>
 </body>
