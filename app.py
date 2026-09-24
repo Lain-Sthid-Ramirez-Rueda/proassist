@@ -33,13 +33,15 @@ def chat():
 
         return jsonify({"error": "empty"}), 400
 
-    api_key = os.environ.get("GROQ_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY") or os.environ.get("proassist") or os.environ.get("PROASSIST")
 
     if not api_key:
 
         return jsonify({"response": "⚠️ Error: La variable de entorno GROQ_API_KEY no está configurada en Render."}), 200
 
     conversation_history.append({"role": "user", "content": user_message})
+
+    model = os.environ.get("GROQ_MODEL", "qwen/qwen3.8-27b")
 
     try:
 
@@ -49,7 +51,7 @@ def chat():
 
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
 
-            json={"model": "llama-3.3-70b-versatile", "messages": conversation_history, "max_tokens": 1024},
+            json={"model": model, "messages": conversation_history, "max_tokens": 1024},
 
             timeout=30
 
