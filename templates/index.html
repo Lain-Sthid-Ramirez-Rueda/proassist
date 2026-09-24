@@ -6,6 +6,7 @@
   <title>ProAssist</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -97,7 +98,7 @@
 </div>
 <div class="input-area">
   <div class="input-row">
-    <textarea id="user-input" rows="1" placeholder="Escribe algo... / Type something..."></textarea>
+    <textarea id="user-input" rows="1" maxlength="1000" placeholder="Escribe algo... / Type something..."></textarea>
     <div class="controls">
       <button id="reset-btn" title="Nueva conversación" onclick="resetChat()">↺</button>
       <button id="send-btn" onclick="sendMessage()">➤</button>
@@ -109,26 +110,43 @@
   const chatWindow = document.getElementById('chat-window');
   const input = document.getElementById('user-input');
   const sendBtn = document.getElementById('send-btn');
+
+  // Identificador de sesión único por pestaña/navegador (aislamiento total de chats)
+  let sessionId = sessionStorage.getItem('proassist_sid');
+  if (!sessionId) {
+    sessionId = 'pa_' + Math.random().toString(36).substring(2, 12) + '_' + Date.now().toString(36);
+    sessionStorage.setItem('proassist_sid', sessionId);
+  }
+
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 120) + 'px'; });
+
   function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function formatContent(text) {
+    let rawHtml = '';
     if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-      return marked.parse(text);
+      rawHtml = marked.parse(text);
+    } else {
+      let html = escapeHtml(text);
+      rawHtml = html
+        .replace(/^#### (.*$)/gim, '<h4 style="margin:0.5rem 0;color:var(--text);">$1</h4>')
+        .replace(/^### (.*$)/gim, '<h3 style="margin:0.5rem 0;color:#a496f8;">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 style="margin:0.5rem 0;color:#7c6af7;">$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1 style="margin:0.5rem 0;color:#7c6af7;">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^\s*[\*\-]\s+(.*$)/gim, '• $1')
+        .replace(/\n/g, '<br/>');
     }
-    let html = escapeHtml(text);
-    return html
-      .replace(/^#### (.*$)/gim, '<h4 style="margin:0.5rem 0;color:var(--text);">$1</h4>')
-      .replace(/^### (.*$)/gim, '<h3 style="margin:0.5rem 0;color:#a496f8;">$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2 style="margin:0.5rem 0;color:#7c6af7;">$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1 style="margin:0.5rem 0;color:#7c6af7;">$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^\s*[\*\-]\s+(.*$)/gim, '• $1')
-      .replace(/\n/g, '<br/>');
+
+    // Sanitización anti-XSS con DOMPurify
+    if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+      return DOMPurify.sanitize(rawHtml);
+    }
+    return rawHtml;
   }
 
   function appendMessage(role, text) {
@@ -141,6 +159,7 @@
     chatWindow.appendChild(msg);
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
+
   function showTyping() {
     const msg = document.createElement('div');
     msg.className = 'message bot typing'; msg.id = 'typing';
@@ -148,7 +167,9 @@
     chatWindow.appendChild(msg);
     chatWindow.scrollTop = chatWindow.scrollHeight;
   }
+
   function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
   async function sendMessage() {
     const text = input.value.trim();
     if (!text) return;
@@ -157,17 +178,30 @@
     appendMessage('user', text);
     showTyping();
     try {
-      const res = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text }) });
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, session_id: sessionId })
+      });
       const data = await res.json();
       removeTyping();
       appendMessage('bot', data.response || 'Error al procesar la respuesta.');
-    } catch { removeTyping(); appendMessage('bot', '❌ Error de conexión. Intenta de nuevo.'); }
+    } catch {
+      removeTyping();
+      appendMessage('bot', '❌ Error de conexión. Intenta de nuevo.');
+    }
     sendBtn.disabled = false;
     input.focus();
   }
+
   function sendSuggestion(btn) { input.value = btn.textContent.replace(/^[^\w]+/, '').trim(); sendMessage(); }
+
   async function resetChat() {
-    await fetch('/reset', { method: 'POST' });
+    await fetch('/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId })
+    });
     chatWindow.innerHTML = '';
     const welcome = document.createElement('div');
     welcome.className = 'welcome'; welcome.id = 'welcome';
