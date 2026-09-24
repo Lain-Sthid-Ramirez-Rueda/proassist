@@ -37,7 +37,6 @@
       position: relative;
     }
 
-    /* Fondo ambiental suave */
     body::before {
       content: '';
       position: absolute;
@@ -55,7 +54,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.9rem 1.4rem;
+      padding: 0.85rem 1.4rem;
       border-bottom: 1px solid var(--border);
       background: rgba(18, 19, 26, 0.85);
       backdrop-filter: blur(14px);
@@ -95,7 +94,7 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
     .status-pill {
       display: inline-flex;
@@ -105,10 +104,11 @@
       color: var(--accent2);
       background: rgba(79, 196, 160, 0.08);
       border: 1px solid rgba(79, 196, 160, 0.22);
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: 20px;
       font-weight: 500;
       user-select: none;
+      margin-right: 2px;
     }
     .pulse-dot {
       width: 6px;
@@ -142,6 +142,47 @@
       border-color: rgba(124, 106, 247, 0.35);
       transform: translateY(-1px);
     }
+    .hdr-btn.active {
+      color: var(--accent);
+      border-color: rgba(124, 106, 247, 0.5);
+      background: rgba(124, 106, 247, 0.1);
+    }
+
+    /* --- Barra de Pomodoro Integrada --- */
+    .pomodoro-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 1.4rem;
+      background: rgba(22, 23, 32, 0.95);
+      border-bottom: 1px solid rgba(124, 106, 247, 0.25);
+      backdrop-filter: blur(12px);
+      animation: slideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      z-index: 9;
+    }
+    .pomodoro-bar.active { display: flex; }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .pomo-left { display: flex; align-items: center; gap: 10px; }
+    .pomo-label { font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
+    .pomo-time { font-family: 'Syne', monospace; font-size: 20px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+    .pomo-controls { display: flex; align-items: center; gap: 6px; }
+    .pomo-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .pomo-btn:hover { background: var(--surface3); border-color: rgba(124,106,247,0.3); color: #fff; }
+    .pomo-btn.primary { background: linear-gradient(135deg, var(--accent), #5a4fd4); color: white; border: none; font-weight: 600; }
+    .pomo-btn.icon { padding: 3px 8px; color: var(--muted); }
 
     /* --- Ventana de Chat --- */
     #chat-window {
@@ -250,7 +291,7 @@
     .message.bot .bubble li { margin-bottom: 0.3rem; }
     .message.bot .bubble hr { border: none; border-top: 1px solid var(--border); margin: 0.9rem 0; }
 
-    /* Checkboxes de productividad interactivos (- [ ] y - [x]) */
+    /* Checkboxes interactivos */
     .message.bot .bubble input[type="checkbox"] {
       accent-color: var(--accent);
       width: 15px;
@@ -265,7 +306,7 @@
       transition: opacity 0.2s;
     }
 
-    /* Tablas Markdown */
+    /* Tablas */
     .message.bot .bubble table {
       width: 100%;
       border-collapse: collapse;
@@ -347,22 +388,22 @@
       color: var(--text);
     }
 
-    /* Barra de herramientas del mensaje */
+    /* Barra de herramientas / Metadatos */
     .msg-meta {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       margin-top: 4px;
       padding: 0 4px;
       font-size: 11px;
       color: var(--muted);
     }
     .message.user .msg-meta { justify-content: flex-end; }
-    .copy-msg-btn {
+    .action-chip-btn {
       background: transparent;
       border: none;
       color: var(--muted);
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 4px;
       font-size: 11px;
       cursor: pointer;
@@ -373,12 +414,12 @@
       transition: opacity 0.2s, color 0.15s;
       font-family: 'DM Sans', sans-serif;
     }
-    .message:hover .copy-msg-btn,
-    .message:focus-within .copy-msg-btn { opacity: 1; }
-    .copy-msg-btn:hover { color: var(--text); }
-    .copy-msg-btn.copied { color: var(--accent2) !important; opacity: 1; }
+    .message:hover .action-chip-btn,
+    .message:focus-within .action-chip-btn { opacity: 1; }
+    .action-chip-btn:hover { color: var(--text); }
+    .action-chip-btn.copied { color: var(--accent2) !important; opacity: 1; }
 
-    /* Indicador de escritura */
+    /* Indicador de escritura animado */
     .typing .bubble { display: flex; align-items: center; gap: 5px; padding: 0.85rem 1.15rem; }
     .dot { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -466,7 +507,6 @@
     #scroll-bottom-btn.visible {
       opacity: 1;
       pointer-events: auto;
-      transform: translateY(0);
     }
     #scroll-bottom-btn:hover {
       border-color: var(--accent);
@@ -506,8 +546,8 @@
 
     /* --- Área de Entrada --- */
     .input-area {
-      padding: 0.6rem 1.4rem 1rem;
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      padding: 0.6rem 1.4rem 0.9rem;
+      padding-bottom: max(0.9rem, env(safe-area-inset-bottom));
       border-top: 1px solid var(--border);
       background: rgba(18, 19, 26, 0.85);
       backdrop-filter: blur(14px);
@@ -557,6 +597,32 @@
     .char-badge.warn { color: #f59e0b; }
     .char-badge.limit { color: #ef4444; }
 
+    .mic-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .mic-btn:hover { background: var(--surface3); color: var(--text); border-color: rgba(124, 106, 247, 0.3); }
+    .mic-btn.recording {
+      color: #ef4444 !important;
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.1) !important;
+      animation: pulseRed 1.2s infinite;
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+
     #send-btn {
       background: linear-gradient(135deg, var(--accent), #5a4fd4);
       border: none;
@@ -578,13 +644,13 @@
     
     footer {
       text-align: center;
-      font-size: 11px;
+      font-size: 10.5px;
       color: var(--muted);
-      padding: 8px 0 2px;
+      padding: 6px 0 2px;
       user-select: none;
     }
 
-    /* Notificación Toast Flotante */
+    /* Notificación Toast */
     #toast {
       position: fixed;
       bottom: 85px;
@@ -624,14 +690,34 @@
       <span class="pulse-dot" aria-hidden="true"></span>
       <span>IA activa</span>
     </div>
+    <button class="hdr-btn" id="pomo-toggle-btn" title="Temporizador Pomodoro" aria-label="Abrir temporizador Pomodoro" onclick="togglePomodoroBar()">
+      ⏱
+    </button>
+    <button class="hdr-btn" id="sound-btn" title="Efectos de sonido (desactivados)" aria-label="Alternar sonido" onclick="toggleSound()">
+      🔇
+    </button>
     <button class="hdr-btn" id="export-btn" title="Exportar plan como Markdown (.md)" aria-label="Exportar conversación a Markdown" onclick="exportChat()">
       📥
     </button>
-    <button class="hdr-btn" id="hdr-reset-btn" title="Nueva conversación" aria-label="Reiniciar conversación" onclick="resetChat()">
+    <button class="hdr-btn" id="hdr-reset-btn" title="Nueva conversación (Ctrl+K)" aria-label="Reiniciar conversación" onclick="resetChat()">
       ↺
     </button>
   </div>
 </header>
+
+<!-- Barra Pomodoro -->
+<div id="pomodoro-bar" class="pomodoro-bar" aria-label="Temporizador de productividad Pomodoro">
+  <div class="pomo-left">
+    <span class="pomo-label" id="pomo-mode">🎯 Enfoque</span>
+    <span class="pomo-time" id="pomo-display">25:00</span>
+  </div>
+  <div class="pomo-controls">
+    <button class="pomo-btn primary" id="pomo-start-btn" onclick="togglePomodoro()">▶ Iniciar</button>
+    <button class="pomo-btn" onclick="setPomodoro(25, '🎯 Enfoque')">25m</button>
+    <button class="pomo-btn" onclick="setPomodoro(5, '☕ Descanso')">5m</button>
+    <button class="pomo-btn icon" title="Cerrar temporizador" aria-label="Cerrar barra Pomodoro" onclick="togglePomodoroBar()">✕</button>
+  </div>
+</div>
 
 <div id="chat-window" role="log" aria-live="polite" aria-label="Historial de mensajes">
   <div class="welcome" id="welcome">
@@ -673,10 +759,11 @@
     <textarea id="user-input" rows="1" maxlength="1000" placeholder="Escribe tus tareas, metas o dudas... / Type here..." aria-label="Mensaje para ProAssist"></textarea>
     <div class="controls">
       <span id="char-count" class="char-badge" aria-live="polite"></span>
+      <button class="mic-btn" id="mic-btn" title="Hablar por micrófono (Dictado por voz)" aria-label="Dictar por voz" onclick="toggleVoice()">🎙️</button>
       <button id="send-btn" title="Enviar mensaje" aria-label="Enviar mensaje" onclick="sendMessage()">➤</button>
     </div>
   </div>
-  <footer>Desarrollado por Lain Sthid Ramírez Rueda · Analista y Desarrollador de Software</footer>
+  <footer>Atajos: Enter enviar · Shift+Enter nueva línea · Ctrl+K reiniciar · Ctrl+S exportar</footer>
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -687,6 +774,9 @@
   const sendBtn = document.getElementById('send-btn');
   const charBadge = document.getElementById('char-count');
   const scrollBtn = document.getElementById('scroll-bottom-btn');
+  const micBtn = document.getElementById('mic-btn');
+  const soundBtn = document.getElementById('sound-btn');
+  const pomoBar = document.getElementById('pomodoro-bar');
 
   // Identificador de sesión único por pestaña/navegador (aislamiento total de chats)
   let sessionId = sessionStorage.getItem('proassist_sid');
@@ -695,7 +785,173 @@
     sessionStorage.setItem('proassist_sid', sessionId);
   }
 
-  // Notificación flotante Toast
+  let lastUserMessage = '';
+
+  // --- Sistema de Audio Sintetizado (Web Audio API) ---
+  let soundEnabled = localStorage.getItem('proassist_sound') === 'true';
+  updateSoundIcon();
+
+  function updateSoundIcon() {
+    soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+    soundBtn.title = soundEnabled ? 'Efectos de sonido (activados)' : 'Efectos de sonido (silenciados)';
+    soundBtn.classList.toggle('active', soundEnabled);
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('proassist_sound', soundEnabled);
+    updateSoundIcon();
+    if (soundEnabled) {
+      playSound('send');
+      showToast('🔊 Sonidos activados');
+    } else {
+      showToast('🔇 Sonidos silenciados');
+    }
+  }
+
+  function playSound(type) {
+    if (!soundEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      if (type === 'send') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(420, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.07);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.07);
+      } else if (type === 'receive') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.07);
+        gain.gain.setValueAtTime(0.07, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.16);
+      } else if (type === 'timer') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.24);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      }
+    } catch (e) {
+      // Ignora políticas de audio
+    }
+  }
+
+  // --- Temporizador Pomodoro ---
+  let pomoSeconds = 25 * 60;
+  let pomoInterval = null;
+  let isPomoRunning = false;
+
+  function togglePomodoroBar() {
+    pomoBar.classList.toggle('active');
+    document.getElementById('pomo-toggle-btn').classList.toggle('active', pomoBar.classList.contains('active'));
+  }
+
+  function updatePomodoroDisplay() {
+    const m = Math.floor(pomoSeconds / 60).toString().padStart(2, '0');
+    const s = (pomoSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('pomo-display').textContent = `${m}:${s}`;
+  }
+
+  function togglePomodoro() {
+    const btn = document.getElementById('pomo-start-btn');
+    if (isPomoRunning) {
+      clearInterval(pomoInterval);
+      isPomoRunning = false;
+      btn.textContent = '▶ Iniciar';
+      btn.classList.remove('running');
+    } else {
+      isPomoRunning = true;
+      btn.textContent = '⏸ Pausar';
+      btn.classList.add('running');
+      pomoInterval = setInterval(() => {
+        if (pomoSeconds > 0) {
+          pomoSeconds--;
+          updatePomodoroDisplay();
+        } else {
+          clearInterval(pomoInterval);
+          isPomoRunning = false;
+          btn.textContent = '▶ Iniciar';
+          playSound('timer');
+          showToast('🎉 ¡Pomodoro finalizado! Tómate un respiro.');
+        }
+      }, 1000);
+    }
+  }
+
+  function setPomodoro(minutes, label) {
+    if (pomoInterval) clearInterval(pomoInterval);
+    isPomoRunning = false;
+    document.getElementById('pomo-start-btn').textContent = '▶ Iniciar';
+    document.getElementById('pomo-mode').textContent = label;
+    pomoSeconds = minutes * 60;
+    updatePomodoroDisplay();
+    showToast(`⏱ Temporizador ajustado a ${minutes} min`);
+  }
+
+  // --- Reconocimiento de Voz (Web Speech API) ---
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let isRecording = false;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = navigator.language || 'es-CO';
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      input.value = transcript;
+      input.dispatchEvent(new Event('input'));
+    };
+
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micBtn.title = 'Hablar por micrófono (Dictado por voz)';
+    };
+
+    recognition.onerror = () => {
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      showToast('⚠️ No se pudo acceder al micrófono');
+    };
+  } else {
+    micBtn.style.display = 'none';
+  }
+
+  function toggleVoice() {
+    if (!recognition) return;
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      try {
+        recognition.start();
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.title = 'Escuchando... pulsa para parar';
+        showToast('🎙️ Escuchando... habla ahora');
+      } catch (e) {}
+    }
+  }
+
+  // --- Notificación Toast ---
   function showToast(message) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -706,7 +962,17 @@
     }, 2400);
   }
 
-  // Atajos de teclado: Enter para enviar, Shift+Enter para salto de línea
+  // --- Atajos de Teclado Globales ---
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      resetChat();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      exportChat();
+    }
+  });
+
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -714,7 +980,6 @@
     }
   });
 
-  // Ajuste automático de altura del textarea y contador de caracteres
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
@@ -728,7 +993,6 @@
     }
   });
 
-  // Control del botón flotante para volver abajo
   chatWindow.addEventListener('scroll', () => {
     const isNearBottom = chatWindow.scrollHeight - chatWindow.scrollTop - chatWindow.clientHeight < 120;
     scrollBtn.classList.toggle('visible', !isNearBottom);
@@ -759,7 +1023,6 @@
         .replace(/\n/g, '<br/>');
     }
 
-    // Envolver bloques <pre><code> con barra superior y botón de copiado
     rawHtml = rawHtml.replace(/<pre><code(?:\s+class="([^"]*)")?>([\s\S]*?)<\/code><\/pre>/gi, (match, lang, code) => {
       const cleanLang = (lang || '').replace('language-', '') || 'código';
       return `
@@ -772,7 +1035,6 @@
         </div>`;
     });
 
-    // Sanitización estricta anti-XSS con DOMPurify
     if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
       return DOMPurify.sanitize(rawHtml);
     }
@@ -808,6 +1070,24 @@
     });
   }
 
+  function editUserMessage(btn) {
+    const bubble = btn.closest('.msg-content').querySelector('.bubble');
+    if (!bubble) return;
+    input.value = bubble.innerText.trim();
+    input.focus();
+    input.dispatchEvent(new Event('input'));
+    showToast('✏️ Mensaje listo para editar');
+  }
+
+  function regenerateLast() {
+    if (!lastUserMessage) {
+      showToast('⚠️ No hay mensaje anterior para regenerar');
+      return;
+    }
+    input.value = lastUserMessage;
+    sendMessage();
+  }
+
   function appendMessage(role, text) {
     const welcome = document.getElementById('welcome');
     if (welcome) welcome.remove();
@@ -818,9 +1098,17 @@
     const formatted = role === 'bot' ? formatContent(text) : escapeHtml(text);
     const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    const toolbar = role === 'bot' 
-      ? `<button class="copy-msg-btn" onclick="copyMessage(this)" aria-label="Copiar respuesta">📋 Copiar</button>`
-      : '';
+    let toolbar = '';
+    if (role === 'bot') {
+      toolbar = `
+        <button class="action-chip-btn" onclick="copyMessage(this)" aria-label="Copiar respuesta">📋 Copiar</button>
+        <button class="action-chip-btn" onclick="regenerateLast()" aria-label="Regenerar respuesta">↺ Regenerar</button>
+      `;
+    } else {
+      toolbar = `
+        <button class="action-chip-btn" onclick="editUserMessage(this)" aria-label="Editar mensaje">✏️ Editar</button>
+      `;
+    }
 
     msg.innerHTML = `
       <div class="avatar" aria-hidden="true">${role === 'user' ? '👤' : '⚡'}</div>
@@ -862,11 +1150,13 @@
     const text = input.value.trim();
     if (!text) return;
 
+    lastUserMessage = text;
     input.value = '';
     input.style.height = 'auto';
     charBadge.classList.remove('visible');
     sendBtn.disabled = true;
 
+    playSound('send');
     appendMessage('user', text);
     showTyping();
 
@@ -878,6 +1168,7 @@
       });
       const data = await res.json();
       removeTyping();
+      playSound('receive');
       appendMessage('bot', data.response || 'Error al procesar la respuesta.');
     } catch {
       removeTyping();
