@@ -128,35 +128,37 @@
       body { cursor: default; }
       .cursor {
         position: fixed;
-        width: 7px;
-        height: 7px;
+        top: 0; left: 0;
+        width: 8px;
+        height: 8px;
         background: var(--clr-primary);
         border-radius: 50%;
         pointer-events: none;
         z-index: 9999;
-        transform: translate(-50%, -50%);
         display: block;
         visibility: hidden;
-        will-change: left, top;
+        will-change: transform;
         box-shadow: 0 0 10px var(--clr-primary);
+        transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
         transition: width 0.15s, height 0.15s, opacity 0.15s;
       }
       .cursor.cursor--visible { visibility: visible; }
       .cursor-follower {
         position: fixed;
-        width: 32px;
-        height: 32px;
+        top: 0; left: 0;
+        width: 28px;
+        height: 28px;
         border: 1.5px solid var(--clr-primary);
         border-radius: 50%;
         pointer-events: none;
         z-index: 9998;
-        transform: translate(-50%, -50%);
         display: block;
         visibility: hidden;
-        will-change: left, top;
-        opacity: 0.45;
-        transition: width 0.28s var(--ease-out),
-                    height 0.28s var(--ease-out),
+        will-change: transform;
+        opacity: 0.55;
+        transform: translate3d(-100px, -100px, 0) translate(-50%, -50%);
+        transition: width 0.2s var(--ease-out),
+                    height 0.2s var(--ease-out),
                     opacity 0.15s,
                     border-color 0.15s,
                     background-color 0.15s;
@@ -164,11 +166,11 @@
       .cursor-follower.cursor--visible { visibility: visible; }
       .cursor--hover ~ .cursor-follower,
       .cursor-follower.cursor--hover {
-        width: 52px;
-        height: 52px;
-        opacity: 0.22;
+        width: 46px;
+        height: 46px;
+        opacity: 0.35;
         border-color: var(--clr-accent);
-        background: rgba(0, 229, 195, 0.06);
+        background: rgba(0, 229, 195, 0.08);
       }
     }
 
@@ -1112,7 +1114,7 @@
 
     function initParticles() {
       particles = [];
-      const numParticles = Math.min(Math.floor((w * h) / 14000), 85);
+      const numParticles = Math.min(Math.floor((w * h) / 22000), 40);
       for (let i = 0; i < numParticles; i++) {
         particles.push(new Particle(w, h));
       }
@@ -1130,10 +1132,10 @@
           const dx = particles[a].x - particles[b].x;
           const dy = particles[a].y - particles[b].y;
           const distSq = dx * dx + dy * dy;
-          if (distSq < 14000) {
-            const opacity = 1 - distSq / 14000;
-            ctx.strokeStyle = `rgba(0, 229, 195, ${opacity * 0.18})`;
-            ctx.lineWidth = 0.6;
+          if (distSq < 13000) {
+            const opacity = 1 - distSq / 13000;
+            ctx.strokeStyle = `rgba(0, 229, 195, ${opacity * 0.16})`;
+            ctx.lineWidth = 0.55;
             ctx.beginPath();
             ctx.moveTo(particles[a].x, particles[a].y);
             ctx.lineTo(particles[b].x, particles[b].y);
@@ -1181,8 +1183,7 @@
   })();
 
   // ==========================================
-  // 2. CURSOR PERSONALIZADO (DESKTOP)
-  // Portado de useCustomCursor del portafolio
+  // 2. CURSOR PERSONALIZADO ULTRA-RÁPIDO (1:1 SYNC SIN RETRASO)
   // ==========================================
   (function initCustomCursor() {
     const cursor = document.getElementById('cursor');
@@ -1191,50 +1192,20 @@
     if (!window.matchMedia('(hover: hover) and (min-width: 1024px)').matches) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let fx = 0, fy = 0;
-    let cx = 0, cy = 0;
-    let rafId = 0;
-    let running = false;
-    let hasMoved = false;
-
-    const lerp = (a, b, t) => a + (b - a) * t;
-
-    function loop() {
-      cx = lerp(cx, fx, 0.35);
-      cy = lerp(cy, fy, 0.35);
-      follower.style.left = `${cx}px`;
-      follower.style.top = `${cy}px`;
-      if (Math.abs(cx - fx) < 0.4 && Math.abs(cy - fy) < 0.4) {
-        running = false;
-        return;
-      }
-      rafId = requestAnimationFrame(loop);
-    }
-
-    function startLoop() {
-      if (!running) {
-        running = true;
-        rafId = requestAnimationFrame(loop);
-      }
-    }
-
-    document.addEventListener('mousemove', (e) => {
-      fx = e.clientX;
-      fy = e.clientY;
-      cursor.style.left = `${fx}px`;
-      cursor.style.top = `${fy}px`;
-
-      if (!hasMoved) {
-        hasMoved = true;
-        cx = fx;
-        cy = fy;
-        follower.style.left = `${cx}px`;
-        follower.style.top = `${cy}px`;
-      }
+    window.addEventListener('mousemove', (e) => {
+      const x = e.clientX;
+      const y = e.clientY;
+      const t = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      cursor.style.transform = t;
+      follower.style.transform = t;
       cursor.classList.add('cursor--visible');
       follower.classList.add('cursor--visible');
-      startLoop();
     }, { passive: true });
+
+    document.addEventListener('mouseleave', () => {
+      cursor.classList.remove('cursor--visible');
+      follower.classList.remove('cursor--visible');
+    });
 
     function attachHoverListeners() {
       const interactiveEls = document.querySelectorAll('button, a, .suggestion-card, .chip, textarea, input, .hdr-btn');
@@ -1432,13 +1403,15 @@
         isRecording = false;
         micBtn.classList.remove('recording');
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          showToast('⚠️ Permiso de micrófono denegado. Habilita el acceso en tu navegador.');
+          showToast('🔒 Micrófono bloqueado. Toca el candado 🔒 en la barra de URL para permitir el acceso.');
         } else if (event.error === 'no-speech') {
-          showToast('⚠️ No se detectó voz. Intenta hablar más cerca del micrófono.');
+          showToast('⚠️ No se detectó voz. Intenta hablar más cerca.');
         } else if (event.error === 'network') {
-          showToast('⚠️ Error de red con el servicio de voz.');
-        } else {
-          showToast('⚠️ Error de micrófono: ' + event.error);
+          showToast('⚠️ Error de conexión en el reconocimiento de voz.');
+        } else if (event.error === 'audio-capture') {
+          showToast('⚠️ No se detectó ningún micrófono conectado.');
+        } else if (event.error !== 'aborted') {
+          showToast(`⚠️ Micrófono: ${event.error}`);
         }
       };
 
@@ -1455,9 +1428,9 @@
     }
   }
 
-  async function toggleVoice() {
+  function toggleVoice() {
     if (!SpeechRecognition) {
-      showToast('⚠️ Tu navegador no soporta reconocimiento de voz nativo (prueba en Google Chrome o Microsoft Edge).');
+      showToast('⚠️ Tu navegador no soporta reconocimiento de voz nativo (usa Google Chrome o Microsoft Edge).');
       return;
     }
 
@@ -1470,33 +1443,22 @@
       return;
     }
 
-    // Solicitar permiso de micrófono al navegador mediante getUserMedia
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-      } catch (err) {
-        console.warn('getUserMedia error:', err);
-        showToast('⚠️ Debes permitir el acceso al micrófono en el navegador.');
-        return;
-      }
-    }
-
     try {
       if (!recognition) {
         recognition = initSpeech();
       }
       if (recognition) {
+        // Llamada síncrona en el contexto del clic del usuario para disparar el diálogo nativo del navegador
         recognition.start();
       }
     } catch (err) {
-      console.warn('Error al iniciar reconocimiento:', err);
+      console.warn('Error al iniciar reconocimiento, reinicializando:', err);
       try {
-        recognition.stop();
-        setTimeout(() => {
-          try { recognition.start(); } catch (e) {}
-        }, 150);
-      } catch (e) {}
+        recognition = initSpeech();
+        if (recognition) recognition.start();
+      } catch (e) {
+        showToast('🔒 Haz clic en el candado 🔒 de la URL para permitir el micrófono.');
+      }
     }
   }
 
@@ -1751,6 +1713,13 @@
         const reader = res.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
+        let renderPending = false;
+
+        function updateUI() {
+          bubble.innerHTML = formatContent(accumulated);
+          scrollToBottom();
+          renderPending = false;
+        }
 
         while (true) {
           const { done, value } = await reader.read();
@@ -1768,16 +1737,23 @@
               const parsed = JSON.parse(dataStr);
               if (parsed.chunk) {
                 accumulated += parsed.chunk;
-                bubble.innerHTML = formatContent(accumulated);
-                scrollToBottom();
+                if (!renderPending) {
+                  renderPending = true;
+                  requestAnimationFrame(updateUI);
+                }
               } else if (parsed.error) {
                 accumulated += '\n\n' + parsed.error;
-                bubble.innerHTML = formatContent(accumulated);
-                scrollToBottom();
+                if (!renderPending) {
+                  renderPending = true;
+                  requestAnimationFrame(updateUI);
+                }
               }
             } catch (e) {}
           }
         }
+
+        // Render final garantizado al completarse la transmisión
+        updateUI();
 
         if (!accumulated.trim()) {
           bubble.innerHTML = '⚠️ No se recibió respuesta. Intenta de nuevo.';
