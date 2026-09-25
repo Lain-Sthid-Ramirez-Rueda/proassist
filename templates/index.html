@@ -1400,47 +1400,102 @@
   let recognition = null;
   let isRecording = false;
 
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = navigator.language || 'es-CO';
+  function initSpeech() {
+    if (!SpeechRecognition) return null;
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = (navigator.language && navigator.language.startsWith('es')) ? navigator.language : 'es-ES';
 
-    recognition.onresult = (event) => {
-      let transcript = '';
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        transcript += event.results[i][0].transcript;
-      }
-      input.value = transcript;
-      input.dispatchEvent(new Event('input'));
-    };
+      let initialPrompt = '';
 
-    recognition.onend = () => {
-      isRecording = false;
-      micBtn.classList.remove('recording');
-      micBtn.title = 'Hablar por micrófono (Dictado por voz)';
-    };
-
-    recognition.onerror = () => {
-      isRecording = false;
-      micBtn.classList.remove('recording');
-      showToast('⚠️ No se pudo acceder al micrófono');
-    };
-  } else {
-    micBtn.style.display = 'none';
-  }
-
-  function toggleVoice() {
-    if (!recognition) return;
-    if (isRecording) {
-      recognition.stop();
-    } else {
-      try {
-        recognition.start();
+      rec.onstart = () => {
         isRecording = true;
+        initialPrompt = input.value ? input.value + ' ' : '';
         micBtn.classList.add('recording');
         micBtn.title = 'Escuchando... pulsa para parar';
         showToast('🎙️ Escuchando... habla ahora');
+      };
+
+      rec.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          interim += event.results[i][0].transcript;
+        }
+        input.value = initialPrompt + interim;
+        input.dispatchEvent(new Event('input'));
+      };
+
+      rec.onerror = (event) => {
+        console.warn('SpeechRecognition error:', event.error);
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          showToast('⚠️ Permiso de micrófono denegado. Habilita el acceso en tu navegador.');
+        } else if (event.error === 'no-speech') {
+          showToast('⚠️ No se detectó voz. Intenta hablar más cerca del micrófono.');
+        } else if (event.error === 'network') {
+          showToast('⚠️ Error de red con el servicio de voz.');
+        } else {
+          showToast('⚠️ Error de micrófono: ' + event.error);
+        }
+      };
+
+      rec.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.title = 'Hablar por micrófono (Dictado por voz)';
+      };
+
+      return rec;
+    } catch (e) {
+      console.error('Error inicializando SpeechRecognition:', e);
+      return null;
+    }
+  }
+
+  async function toggleVoice() {
+    if (!SpeechRecognition) {
+      showToast('⚠️ Tu navegador no soporta reconocimiento de voz nativo (prueba en Google Chrome o Microsoft Edge).');
+      return;
+    }
+
+    if (isRecording) {
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+      }
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      return;
+    }
+
+    // Solicitar permiso de micrófono al navegador mediante getUserMedia
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(t => t.stop());
+      } catch (err) {
+        console.warn('getUserMedia error:', err);
+        showToast('⚠️ Debes permitir el acceso al micrófono en el navegador.');
+        return;
+      }
+    }
+
+    try {
+      if (!recognition) {
+        recognition = initSpeech();
+      }
+      if (recognition) {
+        recognition.start();
+      }
+    } catch (err) {
+      console.warn('Error al iniciar reconocimiento:', err);
+      try {
+        recognition.stop();
+        setTimeout(() => {
+          try { recognition.start(); } catch (e) {}
+        }, 150);
       } catch (e) {}
     }
   }
@@ -1662,12 +1717,77 @@
       const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, session_id: sessionId })
+        body: JSON.stringify({ message: text, session_id: sessionId, stream: true })
       });
-      const data = await res.json();
-      removeTyping();
-      playSound('receive');
-      appendMessage('bot', data.response || 'Error al procesar la respuesta.');
+
+      const contentType = res.headers.get('content-type') || '';
+
+      if (contentType.includes('text/event-stream') && res.body) {
+        removeTyping();
+        playSound('receive');
+
+        const welcome = document.getElementById('welcome');
+        if (welcome) welcome.remove();
+
+        const msg = document.createElement('div');
+        msg.className = 'message bot';
+        const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        msg.innerHTML = `
+          <div class="avatar" aria-hidden="true">⚡</div>
+          <div class="msg-content">
+            <div class="bubble"></div>
+            <div class="msg-meta">
+              <span>${timeString}</span>
+              <button class="action-chip-btn" onclick="copyMessage(this)" aria-label="Copiar respuesta">📋 Copiar</button>
+              <button class="action-chip-btn" onclick="regenerateLast()" aria-label="Regenerar respuesta">↺ Regenerar</button>
+            </div>
+          </div>
+        `;
+        chatWindow.appendChild(msg);
+        const bubble = msg.querySelector('.bubble');
+
+        let accumulated = '';
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data: ')) continue;
+            const dataStr = trimmed.slice(6);
+            if (dataStr === '[DONE]') break;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.chunk) {
+                accumulated += parsed.chunk;
+                bubble.innerHTML = formatContent(accumulated);
+                scrollToBottom();
+              } else if (parsed.error) {
+                accumulated += '\n\n' + parsed.error;
+                bubble.innerHTML = formatContent(accumulated);
+                scrollToBottom();
+              }
+            } catch (e) {}
+          }
+        }
+
+        if (!accumulated.trim()) {
+          bubble.innerHTML = '⚠️ No se recibió respuesta. Intenta de nuevo.';
+        }
+      } else {
+        const data = await res.json();
+        removeTyping();
+        playSound('receive');
+        appendMessage('bot', data.response || 'Error al procesar la respuesta.');
+      }
     } catch {
       removeTyping();
       appendMessage('bot', '❌ Error de conexión. Intenta de nuevo.');
