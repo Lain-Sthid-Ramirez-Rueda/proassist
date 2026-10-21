@@ -14,7 +14,7 @@ Gratis, seguro y optimizado con alto rendimiento.
 ## 🛠 Stack Tecnológico
 
 - **Backend:** Python 3.11 · Flask · Gunicorn (multihilo con locks thread-safe)
-- **IA:** Groq API (`qwen/qwen3.8-27b`) con latencia ultra baja
+- **IA:** modelos de lenguaje open-source servidos por Groq API (por defecto `qwen/qwen3.8-27b`, configurable con `GROQ_MODEL`)
 - **Frontend:** HTML5 · CSS3 (Material & Syne font) · Marked.js · DOMPurify
 - **Despliegue & Contenedores:** Docker · Render
 
@@ -44,4 +44,4 @@ Gratis, seguro y optimizado con alto rendimiento.
 
 **Lain Sthid Ramírez Rueda**  
 Analista y Desarrollador de Software · SENA  
-[LinkedIn](https://linkedin.com/in/lain-sthid-ramirez-rueda) · [GitHub](https://github.com/Lain-ramirez18) · lainramirez18@gmail.com
+[LinkedIn](https://linkedin.com/in/lain-sthid-ramirez-rueda) · [GitHub](https://github.com/Lain-Sthid-Ramirez-Rueda) · lainramirez18@gmail.com
